@@ -113,6 +113,28 @@ flowchart LR
     Format --> Response["Assistant: 'Your total income is $X'"]
 ```
 
+### 🌊 User Navigation Flow
+The following diagram illustrates the seamless path a user takes from landing on the application to accessing their role-specific insights.
+
+```mermaid
+graph TD
+    Start((Visitor)) --> Login[Login Page]
+    Login --> Auth{Auth Check}
+    
+    Auth -- Success --> Context[Auth Context Provider]
+    Auth -- Fail --> Login
+    
+    Context --> Role{Extract Role}
+    
+    Role -- Admin --> AdminDash[Full Admin Dashboard]
+    Role -- Analyst --> AnalystDash[Analyst Insights]
+    Role -- Viewer --> ViewerDash[Personal Overview]
+    
+    AdminDash --> FeaturesA[Users / Records / AI Assistant]
+    AnalystDash --> FeaturesAn[Insights / AI Assistant]
+    ViewerDash --> FeaturesV[Personal Records Only]
+```
+
 ---
 
 ## 🚀 Getting Started
