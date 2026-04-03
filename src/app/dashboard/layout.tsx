@@ -4,7 +4,8 @@ import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Receipt, Users, LogOut, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Receipt, Users, LogOut, Loader2, Sparkles } from 'lucide-react';
+import ChatAssistant from '@/components/ChatAssistant';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
@@ -89,6 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </div>
       </main>
+      {(user.role === 'admin' || user.role === 'analyst') && <ChatAssistant />}
     </div>
   );
 }

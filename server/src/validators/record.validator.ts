@@ -13,6 +13,7 @@ export const updateRecordSchema = createRecordSchema.partial();
 export const recordFilterSchema = z.object({
   type: z.enum(['income', 'expense']).optional(),
   category: z.string().optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   page: z.coerce.number().int().min(1).optional().default(1),

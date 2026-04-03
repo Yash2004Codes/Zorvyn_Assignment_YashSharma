@@ -12,9 +12,14 @@ export function createRecord(input: CreateRecordInput, createdBy: number): Finan
   return db.prepare('SELECT * FROM financial_records WHERE id = ?').get(result.lastInsertRowid) as FinancialRecord;
 }
 
-export function getRecords(filters: RecordFilterInput & { userId: number }) {
-  let query = 'SELECT * FROM financial_records WHERE is_deleted = 0 AND created_by = @userId';
-  const queryParams: any = { userId: filters.userId };
+export function getRecords(filters: RecordFilterInput & { userId: number, isGlobal?: boolean }) {
+  let query = 'SELECT * FROM financial_records WHERE is_deleted = 0';
+  const queryParams: any = {};
+
+  if (!filters.isGlobal) {
+    query += ' AND created_by = @userId';
+    queryParams.userId = filters.userId;
+  }
 
   if (filters.type) {
     query += ' AND type = @type';
@@ -23,6 +28,10 @@ export function getRecords(filters: RecordFilterInput & { userId: number }) {
   if (filters.category) {
     query += ' AND category LIKE @category';
     queryParams.category = `%${filters.category}%`;
+  }
+  if ((filters as any).date) {
+    query += ' AND date = @date';
+    queryParams.date = (filters as any).date;
   }
   if (filters.dateFrom) {
     query += ' AND date >= @dateFrom';

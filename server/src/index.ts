@@ -12,6 +12,7 @@ import authRoutes      from './routes/auth.routes';
 import userRoutes      from './routes/user.routes';
 import recordRoutes    from './routes/record.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import chatRoutes      from './routes/chat.routes';
 
 const app  = express();
 const PORT = process.env.PORT || 4000;
@@ -44,6 +45,7 @@ app.use('/api/auth',      authRoutes);
 app.use('/api/users',     userRoutes);
 app.use('/api/records',   recordRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/chat',      chatRoutes);
 
 // ── 404 Handler ───────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {

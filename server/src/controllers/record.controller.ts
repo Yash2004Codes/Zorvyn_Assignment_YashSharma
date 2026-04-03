@@ -13,9 +13,11 @@ export function createRecord(req: AuthenticatedRequest, res: Response): void {
   }
 }
 
-export function getRecords(req: Request, res: Response): void {
+export function getRecords(req: AuthenticatedRequest, res: Response): void {
   try {
-    const result = RecordService.getRecords(req.query as any);
+    const userId = req.user!.userId;
+    const isGlobal = req.user!.role === 'admin' || req.user!.role === 'analyst';
+    const result = RecordService.getRecords({ ...(req.query as any), userId, isGlobal });
     sendSuccess(res, result);
   } catch (err: unknown) {
     sendError(res, 'Failed to fetch records', 500);
@@ -32,19 +34,37 @@ export function getRecordById(req: Request, res: Response): void {
   }
 }
 
-export function updateRecord(req: Request, res: Response): void {
+export function updateRecord(req: AuthenticatedRequest, res: Response): void {
   try {
-    const record = RecordService.updateRecord(Number(req.params.id), req.body);
-    sendSuccess(res, record, 'Record updated successfully');
+    const id = Number(req.params.id);
+    const userId = req.user!.userId;
+    const record = RecordService.getRecordById(id);
+    
+    if (record.created_by !== userId && req.user!.role !== 'admin') {
+       sendError(res, 'Unauthorized to update this record', 403);
+       return;
+    }
+
+    const updated = RecordService.updateRecord(id, req.body);
+    sendSuccess(res, updated, 'Record updated successfully');
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Update failed';
     sendError(res, message, 400);
   }
 }
 
-export function deleteRecord(req: Request, res: Response): void {
+export function deleteRecord(req: AuthenticatedRequest, res: Response): void {
   try {
-    RecordService.deleteRecord(Number(req.params.id));
+    const id = Number(req.params.id);
+    const userId = req.user!.userId;
+    const record = RecordService.getRecordById(id);
+    
+    if (record.created_by !== userId && req.user!.role !== 'admin') {
+       sendError(res, 'Unauthorized to delete this record', 403);
+       return;
+    }
+
+    RecordService.deleteRecord(id);
     sendSuccess(res, null, 'Record deleted successfully');
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Delete failed';
