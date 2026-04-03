@@ -52,5 +52,48 @@ export function runMigrations(): void {
     console.log('✅ Seeded clean test accounts: test1@ (Admin), test2@ (Analyst), test3@ (Viewer). Password: Admin@1234');
   }
 
+  // Seed financial records for test1 if empty
+  const recordsCheck = db.prepare('SELECT count(*) as count FROM financial_records').get() as { count: number };
+  if (recordsCheck.count === 0) {
+    const admin = db.prepare('SELECT id FROM users WHERE email = ?').get('test1@finance.com') as { id: number };
+    if (admin) {
+      const categories = ['Salary', 'Freelancing', 'Dividends', 'Rent', 'Groceries', 'Starbucks', 'Internet', 'Gym', 'Cinema', 'Utility Bills', 'Amazon Store'];
+      const months = [0, 1, 2, 3]; // current, last month, -2, -3
+      
+      const insert = db.prepare(`
+        INSERT INTO financial_records (amount, type, category, date, notes, created_by)
+        VALUES (@amount, @type, @category, @date, @notes, @created_by)
+      `);
+
+      months.forEach(m => {
+        const monthDate = new Date();
+        monthDate.setMonth(monthDate.getMonth() - m);
+        const yearMonth = monthDate.toISOString().slice(0, 7); // YYYY-MM
+        
+        // Income
+        insert.run({ amount: 5000 + (Math.random()*200), type: 'income', category: 'Salary', date: `${yearMonth}-01`, notes: 'Monthly Payroll', created_by: admin.id });
+        if (Math.random() > 0.5) insert.run({ amount: 850, type: 'income', category: 'Freelancing', date: `${yearMonth}-15`, notes: 'Side Project', created_by: admin.id });
+        if (m === 2) insert.run({ amount: 150, type: 'income', category: 'Dividends', date: `${yearMonth}-20`, notes: 'Stock Dividends', created_by: admin.id });
+
+        // Fixed Expenses
+        insert.run({ amount: 1200, type: 'expense', category: 'Rent', date: `${yearMonth}-05`, notes: 'Monthly Rent', created_by: admin.id });
+        insert.run({ amount: 120, type: 'expense', category: 'Utility Bills', date: `${yearMonth}-10`, notes: 'Electricity & Water', created_by: admin.id });
+        insert.run({ amount: 60, type: 'expense', category: 'Internet', date: `${yearMonth}-03`, notes: 'Fiber Optic', created_by: admin.id });
+        insert.run({ amount: 45, type: 'expense', category: 'Gym', date: `${yearMonth}-01`, notes: 'Membership', created_by: admin.id });
+
+        // Variable Expenses (multiple per month)
+        for (let i = 0; i < 5; i++) {
+           const day = String(Math.floor(Math.random() * 25) + 1).padStart(2, '0');
+           insert.run({ amount: 80 + (Math.random()*40), type: 'expense', category: 'Groceries', date: `${yearMonth}-${day}`, notes: 'Weekly Shop', created_by: admin.id });
+        }
+        for (let i = 0; i < 3; i++) {
+           const day = String(Math.floor(Math.random() * 25) + 1).padStart(2, '0');
+           insert.run({ amount: 5 + (Math.random()*15), type: 'expense', category: 'Starbucks', date: `${yearMonth}-${day}`, notes: 'Coffee stop', created_by: admin.id });
+        }
+      });
+      console.log('✅ Seeded 50+ diverse financial records for test1@ (Admin)');
+    }
+  }
+
   console.log('✅ Database migrations complete');
 }
