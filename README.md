@@ -37,6 +37,84 @@ A premium, full-stack Role-Based Access Control (RBAC) finance dashboard built f
 
 ---
 
+## 🏗️ Architecture & Data Flow
+
+### 🛰️ High-Level System Architecture
+The application follows a modern 3-tier architecture with a Next.js Frontend, a Node.js Express Backend, and a local SQLite Database.
+
+```mermaid
+graph TD
+    subgraph "Client Layer (Next.js 15)"
+        UI["React Functional Components"]
+        AuthCtx["Auth Context (JWT State)"]
+        Axios["Axios Interceptors (Auth Injection)"]
+    end
+
+    subgraph "Logic Layer (Express.js 5)"
+        AuthMW["Auth Middleware (JWT Verify)"]
+        Controllers["Controllers (Route Handlers)"]
+        Services["Business Services (Logic)"]
+        Validators["Zod Schema Validation"]
+    end
+
+    subgraph "Data & External Layer"
+        DB[("SQLite Database<br/>(better-sqlite3)")]
+        CoinCap["CoinCap API (Live Crypto Trends)"]
+    end
+
+    %% User Interaction
+    UI --> Axios
+    Axios --> AuthMW
+    AuthMW --> Controllers
+    Controllers --> Validators
+    Validators --> Services
+    Services --> DB
+
+    %% External Market Data
+    UI -- "Direct/Proxied Fetch" --> CoinCap
+
+    %% Dashboard Summary
+    Services -- "Aggregations" --> UI
+```
+
+### 🔐 Authentication & RBAC Flow
+Strict **Role-Based Access Control** is enforced at the API level for every request.
+
+```mermaid
+sequenceDiagram
+    participant User as User (Client)
+    participant API as Express API
+    participant DB as SQLite DB
+
+    User->>API: POST /api/auth/login
+    API->>DB: Verify Credentials
+    DB-->>API: User Record + Hash
+    API-->>User: Set-Cookie / Return JWT
+
+    Note over User,API: Subsequent Requests (Protected)
+
+    User->>API: GET /api/records (Bearer Token)
+    API->>API: Auth Middleware (Verify Token)
+    API->>API: Extract Role (Admin/Analyst/Viewer)
+    API->>DB: SELECT * FROM records WHERE created_by = userId OR (role=Admin)
+    DB-->>API: Records List
+    API-->>User: JSON Status 200
+```
+
+### 🤖 Smart Chat Assistant Flow
+The internal AI uses a **Logic-Based Parser** to translate natural English into database facts in milliseconds.
+
+```mermaid
+flowchart LR
+    Msg["User Query: 'Total Income'"] --> Parse["Regex & Keyword Brain"]
+    Parse --> SQL["Translate to SQL: SELECT SUM(amount)..."]
+    SQL --> Exec["Execute against DB"]
+    Exec --> Format["Format Outcome as Natural Text"]
+    Format --> Response["Assistant: 'Your total income is $X'"]
+```
+
+---
+
 ## 🚀 Getting Started
 
 ### 1. Prerequisites

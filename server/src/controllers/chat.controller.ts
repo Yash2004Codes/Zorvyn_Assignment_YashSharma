@@ -3,6 +3,7 @@ import * as ChatService from '../services/chat.service';
 import { sendSuccess, sendError } from '../utils/response';
 
 export function handleChatQuery(req: Request, res: Response): void {
+
   try {
     const { message } = req.body;
     if (!message || typeof message !== 'string') {
