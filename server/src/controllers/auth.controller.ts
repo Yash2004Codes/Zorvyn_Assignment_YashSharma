@@ -23,6 +23,12 @@ export async function login(req: Request, res: Response): Promise<void> {
 }
 
 export function me(req: Request, res: Response): void {
-  // req.user is populated by auth middleware
-  sendSuccess(res, (req as any).user, 'Authenticated user');
+  try {
+    const userId = (req as any).user!.userId;
+    const { getUserById } = require('../services/user.service');
+    const user = getUserById(userId);
+    sendSuccess(res, user, 'Authenticated user');
+  } catch (err) {
+    sendError(res, 'User not found', 404);
+  }
 }

@@ -5,22 +5,17 @@ import { requireAnalyst } from '../middleware/role.middleware';
 
 const router = Router();
 
-// All dashboard routes require auth + analyst or admin
-router.use(authenticate, requireAnalyst);
+// All dashboard routes require auth
+router.use(authenticate);
 
-// GET /api/dashboard/summary
+// GET /api/dashboard/summary - Viewers and up
 router.get('/summary', DashboardController.getSummary);
 
-// GET /api/dashboard/categories?type=income|expense
-router.get('/categories', DashboardController.getCategoryBreakdown);
-
-// GET /api/dashboard/trends/monthly?months=12
-router.get('/trends/monthly', DashboardController.getMonthlyTrends);
-
-// GET /api/dashboard/trends/weekly
-router.get('/trends/weekly', DashboardController.getWeeklyTrends);
-
-// GET /api/dashboard/recent?limit=10
-router.get('/recent', DashboardController.getRecentActivity);
+// API Insights endpoints - Analysts and up
+router.get('/insights', requireAnalyst, DashboardController.getInsights);
+router.get('/categories', requireAnalyst, DashboardController.getCategoryBreakdown);
+router.get('/trends/monthly', requireAnalyst, DashboardController.getMonthlyTrends);
+router.get('/trends/weekly', requireAnalyst, DashboardController.getWeeklyTrends);
+router.get('/recent', requireAnalyst, DashboardController.getRecentActivity);
 
 export default router;

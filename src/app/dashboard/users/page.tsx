@@ -23,7 +23,7 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       const res = await api.get('/users');
-      setUsers(res.data.data || []);
+      setUsers(res.data || []);
     } catch (err: any) {
       toast.error('Failed to load users');
     } finally {

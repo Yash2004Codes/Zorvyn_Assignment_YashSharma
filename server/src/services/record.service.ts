@@ -12,27 +12,39 @@ export function createRecord(input: CreateRecordInput, createdBy: number): Finan
   return db.prepare('SELECT * FROM financial_records WHERE id = ?').get(result.lastInsertRowid) as FinancialRecord;
 }
 
-export function getRecords(filters: RecordFilterInput) {
-  const conditions: string[] = ['is_deleted = 0'];
-  const params: Record<string, unknown> = {};
+export function getRecords(filters: RecordFilterInput & { userId: number }) {
+  let query = 'SELECT * FROM financial_records WHERE is_deleted = 0 AND created_by = @userId';
+  const queryParams: any = { userId: filters.userId };
 
-  if (filters.type)     { conditions.push('type = @type');         params.type = filters.type; }
-  if (filters.category) { conditions.push('category LIKE @category'); params.category = `%${filters.category}%`; }
-  if (filters.dateFrom) { conditions.push('date >= @dateFrom');    params.dateFrom = filters.dateFrom; }
-  if (filters.dateTo)   { conditions.push('date <= @dateTo');      params.dateTo = filters.dateTo; }
+  if (filters.type) {
+    query += ' AND type = @type';
+    queryParams.type = filters.type;
+  }
+  if (filters.category) {
+    query += ' AND category LIKE @category';
+    queryParams.category = `%${filters.category}%`;
+  }
+  if (filters.dateFrom) {
+    query += ' AND date >= @dateFrom';
+    queryParams.dateFrom = filters.dateFrom;
+  }
+  if (filters.dateTo) {
+    query += ' AND date <= @dateTo';
+    queryParams.dateTo = filters.dateTo;
+  }
 
-  const where = conditions.join(' AND ');
-  const page  = filters.page  ?? 1;
+  const page = filters.page ?? 1;
   const limit = filters.limit ?? 20;
   const offset = (page - 1) * limit;
 
-  const total = (db.prepare(`SELECT COUNT(*) as count FROM financial_records WHERE ${where}`).get(params) as { count: number }).count;
+  const countQuery = query.replace('SELECT *', 'SELECT count(*) as count');
+  const total = (db.prepare(countQuery).get(queryParams) as { count: number }).count;
 
   const records = db.prepare(`
-    SELECT * FROM financial_records WHERE ${where}
+    ${query}
     ORDER BY date DESC, created_at DESC
     LIMIT @limit OFFSET @offset
-  `).all({ ...params, limit, offset }) as FinancialRecord[];
+  `).all({ ...queryParams, limit, offset }) as FinancialRecord[];
 
   return {
     records,

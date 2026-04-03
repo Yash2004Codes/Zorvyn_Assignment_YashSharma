@@ -11,6 +11,16 @@ export function getSummary(_req: Request, res: Response): void {
   }
 }
 
+export function getInsights(_req: Request, res: Response): void {
+  try {
+    const categories = DashboardService.getCategoryBreakdown();
+    const monthlyTrends = DashboardService.getMonthlyTrends(12);
+    sendSuccess(res, { categories, trends: monthlyTrends }, 'Dashboard insights');
+  } catch {
+    sendError(res, 'Failed to fetch insights', 500);
+  }
+}
+
 export function getCategoryBreakdown(req: Request, res: Response): void {
   try {
     const type = req.query.type as 'income' | 'expense' | undefined;

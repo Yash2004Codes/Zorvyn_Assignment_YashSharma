@@ -28,12 +28,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navLinks = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Transactions', href: '/dashboard/records', icon: Receipt },
   ];
 
+  if (user.role === 'analyst' || user.role === 'admin') {
+    navLinks.push({ name: 'Insights', href: '/dashboard/insights', icon: LayoutDashboard });
+  }
+
   if (user.role === 'admin') {
+    navLinks.push({ name: 'Transactions', href: '/dashboard/records', icon: Receipt });
     navLinks.push({ name: 'Users', href: '/dashboard/users', icon: Users });
   }
+
+  navLinks.push({ name: 'Profile', href: '/dashboard/profile', icon: Users });
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col lg:flex-row">

@@ -38,16 +38,18 @@ export function runMigrations(): void {
     CREATE INDEX IF NOT EXISTS idx_users_email      ON users(email);
   `);
 
-  // Seed a default admin user if none exists
-  const admin = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@finance.com');
-  if (!admin) {
-    // bcrypt hash of "Admin@1234"
-    const hash = '$2a$10$wN1Q/X8D1n7lTf2q0aJq4.V6L3A1V8S2G6QZtA8T8P4T3zEw/qA5S';
-    db.prepare(`
-      INSERT INTO users (name, email, password_hash, role)
-      VALUES ('Super Admin', 'admin@finance.com', ?, 'admin')
-    `).run(hash);
-    console.log('✅ Seeded default admin: admin@finance.com / Admin@1234');
+  // Seed test1, test2, and test3 users
+  const check = db.prepare('SELECT count(*) as count FROM users WHERE email IN (?, ?, ?)').get(
+    'test1@finance.com', 'test2@finance.com', 'test3@finance.com'
+  ) as { count: number };
+
+  if (check.count < 3) {
+    const hash = '$2b$10$CnLDQFYyIU6f9TRJvQfXr.oj4PXAoCrZjOvx/fNpyOhO7wPuOQRSi'; // Correct Admin@1234
+    
+    db.prepare(`INSERT OR IGNORE INTO users (name, email, password_hash, role) VALUES ('Test Admin', 'test1@finance.com', ?, 'admin')`).run(hash);
+    db.prepare(`INSERT OR IGNORE INTO users (name, email, password_hash, role) VALUES ('Test Analyst', 'test2@finance.com', ?, 'analyst')`).run(hash);
+    db.prepare(`INSERT OR IGNORE INTO users (name, email, password_hash, role) VALUES ('Test Viewer', 'test3@finance.com', ?, 'viewer')`).run(hash);
+    console.log('✅ Seeded clean test accounts: test1@ (Admin), test2@ (Analyst), test3@ (Viewer). Password: Admin@1234');
   }
 
   console.log('✅ Database migrations complete');

@@ -42,15 +42,6 @@ export default function DashboardOverview() {
      return <div className="flex justify-center p-10"><Loader2 className="animate-spin w-8 h-8 text-indigo-500" /></div>;
   }
 
-  if (user?.role === 'viewer') {
-    return (
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-2">Welcome to Finance Manager</h2>
-        <p className="text-gray-500">As a Viewer, you can browse transactions from the sidebar menu, but dashboard analytics are restricted.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>

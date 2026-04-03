@@ -11,6 +11,18 @@ export function getAllUsers(_req: Request, res: Response): void {
   }
 }
 
+export async function createUser(req: Request, res: Response): Promise<void> {
+  // Pass to auth service since register creates users
+  try {
+    const { register } = await import('../services/auth.service');
+    const newUser = await register({ ...req.body, password: req.body.password || 'Temp@1234' });
+    sendSuccess(res, newUser.user, 'User created successfully', 201);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'User creation failed';
+    sendError(res, message, 400);
+  }
+}
+
 export function getUserById(req: Request, res: Response): void {
   try {
     const user = UserService.getUserById(Number(req.params.id));
