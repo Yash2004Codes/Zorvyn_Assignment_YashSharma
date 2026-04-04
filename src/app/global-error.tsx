@@ -7,13 +7,29 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html>
+    <html lang="en">
       <body>
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-10 font-sans">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong!</h2>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          textAlign: 'center',
+          fontFamily: 'sans-serif'
+        }}>
+          <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Something went wrong!</h2>
           <button
             onClick={() => reset()}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 transition-all font-medium"
+            style={{
+              padding: '12px 24px',
+              backgroundColor: '#4f46e5',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
           >
             Try again
           </button>
