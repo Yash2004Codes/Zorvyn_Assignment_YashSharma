@@ -43,6 +43,11 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Health check for cloud platform status monitoring
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
+});
+
 // ── Rate Limiting ─────────────────────────────────────────────
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
