@@ -69,14 +69,25 @@ app.get('/api/health', (req, res) => {
 app.set('trust proxy', 1);
 
 // ── Rate Limiting ─────────────────────────────────────────────
+// General API limiter — generous for normal dashboard usage
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: process.env.NODE_ENV === 'production' ? 500 : 2000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests, please try again later.' },
 });
 app.use('/api', limiter);
+
+// Stricter limiter on auth endpoints only (prevent brute-force)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 30 : 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many login attempts, please try again later.' },
+});
+app.use('/api/auth', authLimiter);
 
 // ── Health Check ──────────────────────────────────────────────
 app.get('/api/health', (_req: Request, res: Response) => {
