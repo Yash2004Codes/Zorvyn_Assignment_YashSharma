@@ -3,9 +3,9 @@ import * as RecordService from '../services/record.service';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { sendSuccess, sendError } from '../utils/response';
 
-export function createRecord(req: AuthenticatedRequest, res: Response): void {
+export async function createRecord(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const record = RecordService.createRecord(req.body, req.user!.userId);
+    const record = await RecordService.createRecord(req.body, req.user!.userId);
     sendSuccess(res, record, 'Record created successfully', 201);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Create failed';
@@ -13,20 +13,20 @@ export function createRecord(req: AuthenticatedRequest, res: Response): void {
   }
 }
 
-export function getRecords(req: AuthenticatedRequest, res: Response): void {
+export async function getRecords(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const userId = req.user!.userId;
     const isGlobal = req.user!.role === 'admin' || req.user!.role === 'analyst';
-    const result = RecordService.getRecords({ ...(req.query as any), userId, isGlobal });
+    const result = await RecordService.getRecords({ ...(req.query as any), userId, isGlobal });
     sendSuccess(res, result);
   } catch (err: unknown) {
     sendError(res, 'Failed to fetch records', 500);
   }
 }
 
-export function getRecordById(req: Request, res: Response): void {
+export async function getRecordById(req: Request, res: Response): Promise<void> {
   try {
-    const record = RecordService.getRecordById(Number(req.params.id));
+    const record = await RecordService.getRecordById(Number(req.params.id));
     sendSuccess(res, record);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Not found';
@@ -34,18 +34,18 @@ export function getRecordById(req: Request, res: Response): void {
   }
 }
 
-export function updateRecord(req: AuthenticatedRequest, res: Response): void {
+export async function updateRecord(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const id = Number(req.params.id);
     const userId = req.user!.userId;
-    const record = RecordService.getRecordById(id);
+    const record = await RecordService.getRecordById(id);
     
     if (record.created_by !== userId && req.user!.role !== 'admin') {
        sendError(res, 'Unauthorized to update this record', 403);
        return;
     }
 
-    const updated = RecordService.updateRecord(id, req.body);
+    const updated = await RecordService.updateRecord(id, req.body);
     sendSuccess(res, updated, 'Record updated successfully');
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Update failed';
@@ -53,21 +53,22 @@ export function updateRecord(req: AuthenticatedRequest, res: Response): void {
   }
 }
 
-export function deleteRecord(req: AuthenticatedRequest, res: Response): void {
+export async function deleteRecord(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const id = Number(req.params.id);
     const userId = req.user!.userId;
-    const record = RecordService.getRecordById(id);
+    const record = await RecordService.getRecordById(id);
     
     if (record.created_by !== userId && req.user!.role !== 'admin') {
        sendError(res, 'Unauthorized to delete this record', 403);
        return;
     }
 
-    RecordService.deleteRecord(id);
+    await RecordService.deleteRecord(id);
     sendSuccess(res, null, 'Record deleted successfully');
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Delete failed';
     sendError(res, message, 400);
   }
 }
+

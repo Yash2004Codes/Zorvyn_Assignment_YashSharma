@@ -22,9 +22,10 @@ export default function InsightsPage() {
       try {
         const res = await api.get('/dashboard/insights');
         setData(res.data);
-      } catch (error) {
-        console.error('Error fetching insights:', error);
+      } catch (error: any) {
+        console.error('Error fetching insights:', error.message || error);
       } finally {
+
         setLoading(false);
       }
     };
@@ -65,7 +66,8 @@ export default function InsightsPage() {
                     <p className="font-medium text-gray-900 capitalize">{cat.category}</p>
                     <p className="text-xs text-gray-500">{cat.count} transactions</p>
                   </div>
-                  <span className="font-semibold text-gray-700">{formatCurrency(cat.total)}</span>
+                  <span className="font-semibold text-gray-700">{formatCurrency(Number(cat.total))}</span>
+
                 </div>
               ))}
             </div>
@@ -85,8 +87,9 @@ export default function InsightsPage() {
                 <div key={i} className="flex flex-col justify-between p-4 bg-gray-50 rounded-xl">
                   <p className="font-medium text-gray-900 mb-2">{trend.month}</p>
                   <div className="flex justify-between text-sm">
-                    <span className="text-emerald-600 font-medium">Income: {formatCurrency(trend.income)}</span>
-                    <span className="text-rose-600 font-medium">Expense: {formatCurrency(trend.expense)}</span>
+                    <span className="text-emerald-600 font-medium">Income: {formatCurrency(Number(trend.income))}</span>
+                    <span className="text-rose-600 font-medium">Expense: {formatCurrency(Number(trend.expense))}</span>
+
                   </div>
                 </div>
               ))}

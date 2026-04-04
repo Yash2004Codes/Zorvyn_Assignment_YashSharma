@@ -18,10 +18,28 @@ const app  = express();
 const PORT = process.env.PORT || 4000;
 
 // ── Run DB migrations on startup ─────────────────────────────
-runMigrations();
+// (Migrated to bottom for cleaner startup sequence)
 
-// ── Global Middleware ─────────────────────────────────────────
-app.use(cors({ origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], credentials: true }));
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  process.env.FRONTEND_URL
+].filter(Boolean) as string[];
+
+app.use(cors({ 
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true 
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -59,9 +77,19 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 // ── Start Server ──────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`🚀 Finance API server running at http://localhost:${PORT}`);
-  console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
-});
+(async () => {
+  try {
+    console.log('⏳ Running database migrations...');
+    await runMigrations();
+    app.listen(PORT, () => {
+      console.log(`🚀 Finance API server running at http://localhost:${PORT}`);
+      console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
+    });
+  } catch (err) {
+    console.error('❌ Failed to start server due to migration error:', err);
+    process.exit(1);
+  }
+})();
 
 export default app;
+

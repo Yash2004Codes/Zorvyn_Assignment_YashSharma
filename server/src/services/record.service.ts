@@ -1,95 +1,124 @@
-import db from '../db/database';
+import pool from '../db/database';
 import { FinancialRecord } from '../models/types';
 import { CreateRecordInput, UpdateRecordInput, RecordFilterInput } from '../validators/record.validator';
 
-export function createRecord(input: CreateRecordInput, createdBy: number): FinancialRecord {
-  const stmt = db.prepare(`
+export async function createRecord(input: CreateRecordInput, createdBy: number): Promise<FinancialRecord> {
+  const result = await pool.query(`
     INSERT INTO financial_records (amount, type, category, date, notes, created_by)
-    VALUES (@amount, @type, @category, @date, @notes, @created_by)
-  `);
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *
+  `, [input.amount, input.type, input.category, input.date, input.notes ?? null, createdBy]);
 
-  const result = stmt.run({ ...input, notes: input.notes ?? null, created_by: createdBy });
-  return db.prepare('SELECT * FROM financial_records WHERE id = ?').get(result.lastInsertRowid) as FinancialRecord;
+  return result.rows[0] as FinancialRecord;
 }
 
-export function getRecords(filters: RecordFilterInput & { userId: number, isGlobal?: boolean }) {
+export async function getRecords(filters: RecordFilterInput & { userId: number, isGlobal?: boolean }) {
   let query = 'SELECT * FROM financial_records WHERE is_deleted = 0';
-  const queryParams: any = {};
+  const values: any[] = [];
+  let counter = 1;
 
   if (!filters.isGlobal) {
-    query += ' AND created_by = @userId';
-    queryParams.userId = filters.userId;
+    query += ` AND created_by = $${counter++}`;
+    values.push(filters.userId);
   }
 
   if (filters.type) {
-    query += ' AND type = @type';
-    queryParams.type = filters.type;
+    query += ` AND type = $${counter++}`;
+    values.push(filters.type);
   }
   if (filters.category) {
-    query += ' AND category LIKE @category';
-    queryParams.category = `%${filters.category}%`;
+    query += ` AND category ILIKE $${counter++}`;
+    values.push(`%${filters.category}%`);
   }
   if ((filters as any).date) {
-    query += ' AND date = @date';
-    queryParams.date = (filters as any).date;
+    query += ` AND date = $${counter++}`;
+    values.push((filters as any).date);
   }
   if (filters.dateFrom) {
-    query += ' AND date >= @dateFrom';
-    queryParams.dateFrom = filters.dateFrom;
+    query += ` AND date >= $${counter++}`;
+    values.push(filters.dateFrom);
   }
   if (filters.dateTo) {
-    query += ' AND date <= @dateTo';
-    queryParams.dateTo = filters.dateTo;
+    query += ` AND date <= $${counter++}`;
+    values.push(filters.dateTo);
   }
 
   const page = filters.page ?? 1;
   const limit = filters.limit ?? 20;
   const offset = (page - 1) * limit;
 
+  // Count query
   const countQuery = query.replace('SELECT *', 'SELECT count(*) as count');
-  const total = (db.prepare(countQuery).get(queryParams) as { count: number }).count;
+  const countResult = await pool.query(countQuery, values);
+  const total = parseInt(countResult.rows[0].count);
 
-  const records = db.prepare(`
+  // Final query with pagination
+  const finalQuery = `
     ${query}
     ORDER BY date DESC, created_at DESC
-    LIMIT @limit OFFSET @offset
-  `).all({ ...queryParams, limit, offset }) as FinancialRecord[];
+    LIMIT $${counter++} OFFSET $${counter++}
+  `;
+  const finalValues = [...values, limit, offset];
+  
+  const recordsResult = await pool.query(finalQuery, finalValues);
 
   return {
-    records,
+    records: recordsResult.rows as FinancialRecord[],
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
 }
 
-export function getRecordById(id: number): FinancialRecord {
-  const record = db.prepare('SELECT * FROM financial_records WHERE id = ? AND is_deleted = 0').get(id) as FinancialRecord | undefined;
+export async function getRecordById(id: number): Promise<FinancialRecord> {
+  const result = await pool.query('SELECT * FROM financial_records WHERE id = $1 AND is_deleted = 0', [id]);
+  const record = result.rows[0] as FinancialRecord | undefined;
   if (!record) throw new Error('Record not found');
   return record;
 }
 
-export function updateRecord(id: number, input: UpdateRecordInput): FinancialRecord {
-  const record = db.prepare('SELECT * FROM financial_records WHERE id = ? AND is_deleted = 0').get(id);
-  if (!record) throw new Error('Record not found');
-
+export async function updateRecord(id: number, input: UpdateRecordInput): Promise<FinancialRecord> {
   const fields: string[] = [];
-  const values: Record<string, unknown> = { id };
+  const values: any[] = [];
+  let counter = 1;
 
-  if (input.amount   !== undefined) { fields.push('amount = @amount');     values.amount = input.amount; }
-  if (input.type     !== undefined) { fields.push('type = @type');         values.type = input.type; }
-  if (input.category !== undefined) { fields.push('category = @category'); values.category = input.category; }
-  if (input.date     !== undefined) { fields.push('date = @date');         values.date = input.date; }
-  if (input.notes    !== undefined) { fields.push('notes = @notes');       values.notes = input.notes; }
+  if (input.amount !== undefined) {
+    fields.push(`amount = $${counter++}`);
+    values.push(input.amount);
+  }
+  if (input.type !== undefined) {
+    fields.push(`type = $${counter++}`);
+    values.push(input.type);
+  }
+  if (input.category !== undefined) {
+    fields.push(`category = $${counter++}`);
+    values.push(input.category);
+  }
+  if (input.date !== undefined) {
+    fields.push(`date = $${counter++}`);
+    values.push(input.date);
+  }
+  if (input.notes !== undefined) {
+    fields.push(`notes = $${counter++}`);
+    values.push(input.notes);
+  }
 
   if (fields.length === 0) throw new Error('No fields to update');
 
-  fields.push("updated_at = datetime('now')");
-  db.prepare(`UPDATE financial_records SET ${fields.join(', ')} WHERE id = @id`).run(values);
+  values.push(id);
+  const result = await pool.query(
+    `UPDATE financial_records SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${counter} AND is_deleted = 0 RETURNING *`,
+    values
+  );
 
-  return db.prepare('SELECT * FROM financial_records WHERE id = ?').get(id) as FinancialRecord;
+  const updated = result.rows[0] as FinancialRecord | undefined;
+  if (!updated) throw new Error('Record not found');
+  return updated;
 }
 
-export function deleteRecord(id: number): void {
-  const record = db.prepare('SELECT id FROM financial_records WHERE id = ? AND is_deleted = 0').get(id);
-  if (!record) throw new Error('Record not found');
-  db.prepare("UPDATE financial_records SET is_deleted = 1, updated_at = datetime('now') WHERE id = ?").run(id);
+export async function deleteRecord(id: number): Promise<void> {
+  const result = await pool.query(
+    "UPDATE financial_records SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND is_deleted = 0 RETURNING id",
+    [id]
+  );
+  if (result.rowCount === 0) throw new Error('Record not found');
 }
+

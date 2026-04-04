@@ -210,7 +210,7 @@ export default function RecordsPage() {
                     <td className={`py-4 px-6 font-medium whitespace-nowrap ${
                       record.type === 'income' ? 'text-emerald-600' : 'text-gray-900'
                     }`}>
-                      {record.type === 'income' ? '+' : '-'}${record.amount.toFixed(2)}
+                      {record.type === 'income' ? '+' : '-'}${Number(record.amount).toFixed(2)}
                     </td>
                     <td className="py-4 px-6 text-gray-500 max-w-xs truncate">{record.notes || '-'}</td>
                     {isAdmin && (

@@ -18,11 +18,20 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/login', { email, password });
-      login(response.data.token, response.data.user);
-      toast.success('Logged in successfully!');
-      router.push('/dashboard');
+      const response: any = await api.post('/auth/login', { email, password });
+      
+      // The backend returns { success: true, data: { user, token } }
+      // Our api interceptor returns response.data (the body)
+      if (response.success && response.data) {
+        login(response.data.token, response.data.user);
+        toast.success('Logged in successfully!');
+        // Small delay to ensure state update propagates
+        setTimeout(() => router.push('/dashboard'), 100);
+      } else {
+        throw new Error(response.message || 'Login failed');
+      }
     } catch (err: any) {
+      console.error('Login error:', err);
       toast.error(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
@@ -45,7 +54,7 @@ export default function LoginPage() {
                 type="email"
                 required
                 className="w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                placeholder="admin@finance.com"
+                placeholder="test1@finance.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -76,10 +85,11 @@ export default function LoginPage() {
           
           <div className="text-center text-sm text-gray-500 mt-4 border-t pt-4">
             <p className="mb-1">Default Admin Credentials:</p>
-            <code>admin@finance.com / Admin@1234</code>
+            <code>test1@finance.com / Admin@1234</code>
           </div>
         </form>
       </div>
     </div>
   );
 }
+

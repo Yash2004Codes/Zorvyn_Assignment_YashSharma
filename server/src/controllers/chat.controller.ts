@@ -2,8 +2,7 @@ import { Request, Response } from 'express';
 import * as ChatService from '../services/chat.service';
 import { sendSuccess, sendError } from '../utils/response';
 
-export function handleChatQuery(req: Request, res: Response): void {
-
+export async function handleChatQuery(req: Request, res: Response): Promise<void> {
   try {
     const { message } = req.body;
     if (!message || typeof message !== 'string') {
@@ -18,9 +17,10 @@ export function handleChatQuery(req: Request, res: Response): void {
       return;
     }
 
-    const result = ChatService.processUserQuery(message);
+    const result = await ChatService.processUserQuery(message);
     sendSuccess(res, result, 'Assistant response');
   } catch (err) {
     sendError(res, 'Failed to process assistant query', 500);
   }
 }
+
