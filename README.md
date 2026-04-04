@@ -4,6 +4,7 @@ A premium, full-stack Role-Based Access Control (RBAC) finance dashboard built f
 
 YouTube Live Demo : https://youtu.be/VxeCti0ILeU 
 
+Netlify Deployed Link : https://zorvynfinanci.netlify.app/login 
 
 ---
 
