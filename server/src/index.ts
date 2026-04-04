@@ -33,20 +33,23 @@ const allowedOrigins = [
   ...frontendUrls,
 ].filter(Boolean) as string[];
 
+console.log('✅ CORS allowed origins:', allowedOrigins);
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow no-origin requests (curl, mobile, server-to-server)
+    // Allow no-origin requests (curl, mobile, Render health checks)
     if (!origin) return callback(null, true);
 
     const isAllowed =
       allowedOrigins.includes(origin) ||
-      /\.netlify\.app$/.test(origin) ||       // any netlify preview/prod URL
-      /\.onrender\.com$/.test(origin);        // any render URL
+      /\.netlify\.app$/.test(origin) ||
+      /\.onrender\.com$/.test(origin) ||
+      process.env.CORS_ALLOW_ALL === 'true';   // emergency escape hatch
 
     if (isAllowed) {
       callback(null, true);
     } else {
-      console.warn(`CORS blocked origin: ${origin}`);
+      console.warn(`🚫 CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -61,6 +64,9 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
 });
+
+// ── Trust Proxy (Required for Render / any reverse proxy) ────
+app.set('trust proxy', 1);
 
 // ── Rate Limiting ─────────────────────────────────────────────
 const limiter = rateLimit({

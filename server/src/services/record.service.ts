@@ -2,6 +2,12 @@ import pool from '../db/database';
 import { FinancialRecord } from '../models/types';
 import { CreateRecordInput, UpdateRecordInput, RecordFilterInput } from '../validators/record.validator';
 
+// Normalize PostgreSQL NUMERIC → JS number to prevent frontend parse errors
+function normalizeRecord(row: any): FinancialRecord {
+  return { ...row, amount: parseFloat(row.amount) };
+}
+
+
 export async function createRecord(input: CreateRecordInput, createdBy: number): Promise<FinancialRecord> {
   const result = await pool.query(`
     INSERT INTO financial_records (amount, type, category, date, notes, created_by)
@@ -9,8 +15,9 @@ export async function createRecord(input: CreateRecordInput, createdBy: number):
     RETURNING *
   `, [input.amount, input.type, input.category, input.date, input.notes ?? null, createdBy]);
 
-  return result.rows[0] as FinancialRecord;
+  return normalizeRecord(result.rows[0]);
 }
+
 
 export async function getRecords(filters: RecordFilterInput & { userId: number, isGlobal?: boolean }) {
   let query = 'SELECT * FROM financial_records WHERE is_deleted = 0';
@@ -63,16 +70,18 @@ export async function getRecords(filters: RecordFilterInput & { userId: number, 
   const recordsResult = await pool.query(finalQuery, finalValues);
 
   return {
-    records: recordsResult.rows as FinancialRecord[],
+    records: recordsResult.rows.map(normalizeRecord),
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
+
 }
 
 export async function getRecordById(id: number): Promise<FinancialRecord> {
   const result = await pool.query('SELECT * FROM financial_records WHERE id = $1 AND is_deleted = 0', [id]);
-  const record = result.rows[0] as FinancialRecord | undefined;
+  const record = result.rows[0];
   if (!record) throw new Error('Record not found');
-  return record;
+  return normalizeRecord(record);
+
 }
 
 export async function updateRecord(id: number, input: UpdateRecordInput): Promise<FinancialRecord> {
@@ -109,9 +118,10 @@ export async function updateRecord(id: number, input: UpdateRecordInput): Promis
     values
   );
 
-  const updated = result.rows[0] as FinancialRecord | undefined;
+  const updated = result.rows[0];
   if (!updated) throw new Error('Record not found');
-  return updated;
+  return normalizeRecord(updated);
+
 }
 
 export async function deleteRecord(id: number): Promise<void> {
