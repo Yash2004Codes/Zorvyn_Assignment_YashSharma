@@ -3,8 +3,6 @@
 A premium, full-stack Role-Based Access Control (RBAC) finance dashboard built for professional assignment presentation. This application demonstrates secure user authentication, complex data visualization, real-time API integrations, and an AI-driven financial assistant.
 
 YouTube Live Demo : https://youtu.be/VxeCti0ILeU 
-
-
 Netlifyy Deployed Link : https://zorvynfinanci.netlify.app/login 
 ---
 

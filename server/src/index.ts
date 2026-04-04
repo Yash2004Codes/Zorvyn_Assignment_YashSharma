@@ -1,10 +1,21 @@
+/**
+ * Express Server Entry Point for Zorvyn Finance Dashboard.
+ * 
+ * Responsibilities:
+ * - Environment configuration & initialization.
+ * - Database migration on startup.
+ * - Middleware orchestration (CORS, Rate Limiting, JSON Parsing).
+ * - Route registration for Auth, Users, Records, Chat, and Dashboards.
+ * - Global error handling and health monitoring.
+ */
+
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load env
+// Load environmental variables from .env.local for development and production
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 import { runMigrations } from './db/migrate';
@@ -15,18 +26,16 @@ import dashboardRoutes from './routes/dashboard.routes';
 import chatRoutes      from './routes/chat.routes';
 
 const app  = express();
+// Default port 4000 can be overridden by environment variable
 const PORT = process.env.PORT || 4000;
 
-// ── Run DB migrations on startup ─────────────────────────────
-// (Migrated to bottom for cleaner startup sequence)
-
-
-// Build allowed origins list — supports comma-separated FRONTEND_URL values
+// Resolve front-end origins (handles comma-separated values for multiple environments)
 const frontendUrls = (process.env.FRONTEND_URL || '')
   .split(',')
   .map(u => u.trim())
   .filter(Boolean);
 
+// Define allowed origins for Cross-Origin Resource Sharing (CORS)
 const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -35,16 +44,22 @@ const allowedOrigins = [
 
 console.log('✅ CORS allowed origins:', allowedOrigins);
 
+/**
+ * CORS Middleware Configuration:
+ * - Restricts requests to trusted origins.
+ * - Allows wildcard subdomains for platforms like Netlify and Render.
+ * - Supports credentials (cookies/auth headers).
+ */
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow no-origin requests (curl, mobile, Render health checks)
+    // Allow no-origin requests (e.g., local curl calls or platform health checks)
     if (!origin) return callback(null, true);
 
     const isAllowed =
       allowedOrigins.includes(origin) ||
       /\.netlify\.app$/.test(origin) ||
       /\.onrender\.com$/.test(origin) ||
-      process.env.CORS_ALLOW_ALL === 'true';   // emergency escape hatch
+      process.env.CORS_ALLOW_ALL === 'true'; // Emergency escape hatch for bypass
 
     if (isAllowed) {
       callback(null, true);
@@ -57,31 +72,32 @@ app.use(cors({
 }));
 
 
+// Body parsers for processing JSON and form-encoded data payloads
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check for cloud platform status monitoring
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
-});
 
-// ── Trust Proxy (Required for Render / any reverse proxy) ────
+// Trust Proxy: Required for platforms like Render/Heroku where app is behind a reverse proxy.
+// This ensures rate limiting and logs see the client IP, not the proxy IP.
 app.set('trust proxy', 1);
 
-// ── Rate Limiting ─────────────────────────────────────────────
-// General API limiter — generous for normal dashboard usage
+
+// ── Rate Limiting Section ─────────────────────────────────────
+// Prevents Denial of Service (DoS) and brute force attacks.
+
+// 1. General API limiter: Scaled for high developer usage but strict in production.
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 500 : 2000,
+  windowMs: 15 * 60 * 1000, // 15-minute window
+  max: process.env.NODE_ENV === 'production' ? 500 : 2000, // Dynamic cap
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests, please try again later.' },
 });
 app.use('/api', limiter);
 
-// Stricter limiter on auth endpoints only (prevent brute-force)
+// 2. Auth Limiter: Stricter limit on login attempts to prevent automated credential testing.
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000, // 15-minute window
   max: process.env.NODE_ENV === 'production' ? 30 : 200,
   standardHeaders: true,
   legacyHeaders: false,
@@ -89,43 +105,53 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth', authLimiter);
 
-// ── Health Check ──────────────────────────────────────────────
+
+// Basic health check for monitoring systems
 app.get('/api/health', (_req: Request, res: Response) => {
-  res.json({ success: true, message: 'Finance API is running', timestamp: new Date().toISOString() });
+  res.json({ success: true, message: 'Finance API is running', status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ── Routes ────────────────────────────────────────────────────
-app.use('/api/auth',      authRoutes);
-app.use('/api/users',     userRoutes);
-app.use('/api/records',   recordRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/chat',      chatRoutes);
 
-// ── 404 Handler ───────────────────────────────────────────────
+// ── Primary App Routes ─────────────────────────────────────────
+app.use('/api/auth',      authRoutes);      // Login, Registration, Token verification
+app.use('/api/users',     userRoutes);      // Admin-level user management
+app.use('/api/records',   recordRoutes);    // Financial record CRUD operations
+app.use('/api/dashboard', dashboardRoutes); // High-level aggregations & summaries
+app.use('/api/chat',      chatRoutes);      // AI Assistant requests
+
+
+// Catch-all 404 Route: Returns status 404 for any undefined resource paths.
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });
 
-// ── Global Error Handler ──────────────────────────────────────
+
+// Global Error Handler: Catches unhandled promise rejections or server errors.
+// Prevents exposing sensitive stack traces to users.
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ success: false, message: 'Internal server error' });
 });
 
-// ── Start Server ──────────────────────────────────────────────
+
+/**
+ * Startup Sequence:
+ * 1. Executes PostgreSQL schema migrations.
+ * 2. Seeds initial test data if database is empty.
+ * 3. Starts the Express listener on the configured port.
+ */
 (async () => {
   try {
     console.log('⏳ Running database migrations...');
-    await runMigrations();
+    await runMigrations(); // Ensures tables and indexes exist
     app.listen(PORT, () => {
       console.log(`🚀 Finance API server running at http://localhost:${PORT}`);
-      console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`📋 API Baseline: http://localhost:${PORT}/api/health`);
     });
   } catch (err) {
     console.error('❌ Failed to start server due to migration error:', err);
-    process.exit(1);
+    process.exit(1); // Fatal exit
   }
 })();
 
 export default app;
-
