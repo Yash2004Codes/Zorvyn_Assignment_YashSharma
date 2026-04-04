@@ -135,43 +135,6 @@ graph TD
     ViewerDash --> FeaturesV[Personal Records Only]
 ```
 
-### 🗄️ Database Schema
-
-The application uses a structured relational schema designed for strict data isolation and history auditing.
-
-```mermaid
-erDiagram
-    users {
-        int4 id PK
-        text name
-        text email
-        text password_hash
-        text role
-        int4 is_active
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    financial_records {
-        int4 id PK
-        numeric amount
-        text type
-        text category
-        text date
-        text notes
-        int4 is_deleted
-        int4 created_by FK
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    users ||--o{ financial_records : "creates / owns"
-```
-
-**Schema Explanation:**
-The `users` table manages the core authentication and role-based access levels context (`role`). The `financial_records` table securely stores transactional data, uniquely linked to the user who created it via the `created_by` foreign key constraint. The architecture implements soft deletion patterns (`is_active` and `is_deleted` flags) across both tables, an enterprise-grade best practice ensuring a non-destructive, permanent audit trail of financial history.
-
----
 
 ## 🚀 Getting Started
 
