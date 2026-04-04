@@ -255,7 +255,7 @@ export default function RecordsPage() {
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as 'income' | 'expense' })}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-black focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                 >
                   <option value="expense">Expense</option>
                   <option value="income">Income</option>
@@ -273,7 +273,7 @@ export default function RecordsPage() {
                     required
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    className="w-full pl-8 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full pl-8 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-black focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -286,7 +286,7 @@ export default function RecordsPage() {
                   placeholder="e.g. Groceries, Salary, Rent"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-black focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                 />
               </div>
 
@@ -297,7 +297,7 @@ export default function RecordsPage() {
                   required
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-black focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                 />
               </div>
 
@@ -306,7 +306,7 @@ export default function RecordsPage() {
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-black focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                   rows={2}
                   placeholder="Additional details..."
                 />

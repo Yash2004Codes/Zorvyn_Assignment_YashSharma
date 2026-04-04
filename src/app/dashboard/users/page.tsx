@@ -38,6 +38,16 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
+  const handleStatusChange = async (userId: number, newStatus: string) => {
+    try {
+      await api.patch(`/users/${userId}`, { is_active: newStatus === 'active' });
+      toast.success('User status updated');
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update user status');
+    }
+  };
+
   const handleRoleChange = async (userId: number, newRole: string) => {
     try {
       await api.patch(`/users/${userId}`, { role: newRole });
@@ -101,11 +111,21 @@ export default function UsersPage() {
                     <td className="py-4 px-6 font-medium text-gray-900">{user.name}</td>
                     <td className="py-4 px-6 text-gray-500">{user.email}</td>
                     <td className="py-4 px-6">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                      }`}>
-                        {user.is_active ? 'Active' : 'Deactivated'}
-                      </span>
+                      <select
+                        value={user.is_active ? 'active' : 'deactivated'}
+                        onChange={(e) => handleStatusChange(user.id, e.target.value)}
+                        disabled={
+                          user.email === 'admin@finance.com' ||
+                          user.email === 'test1@finance.com' ||
+                          user.id === currentUser?.id  // can't deactivate yourself
+                        }
+                        className={`text-sm rounded outline-none focus:ring-0 cursor-pointer disabled:opacity-50 font-medium px-2 py-1 ${
+                          user.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                        }`}
+                      >
+                        <option value="active" className="bg-white text-gray-900">Active</option>
+                        <option value="deactivated" className="bg-white text-gray-900">Deactivated</option>
+                      </select>
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center space-x-2">
@@ -113,7 +133,10 @@ export default function UsersPage() {
                         <select
                           value={user.role}
                           onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                          disabled={user.email === 'admin@finance.com'} // Protect master admin
+                          disabled={
+                            user.email === 'admin@finance.com' ||
+                            user.id === currentUser?.id  // can't change your own role
+                          } // Protect master admin & current user
                           className="text-sm bg-transparent border-gray-200 rounded outline-none focus:ring-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed capitalize font-medium text-gray-700"
                         >
                           <option value="viewer">Viewer</option>
@@ -125,7 +148,7 @@ export default function UsersPage() {
                     <td className="py-4 px-6 text-right space-x-2">
                       <button 
                         onClick={() => handleDelete(user.id)}
-                        disabled={user.email === 'admin@finance.com' || !user.is_active}
+                        disabled={user.email === 'admin@finance.com' || user.email === 'test1@finance.com'}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400"
                         title="Deactivate User"
                       >
