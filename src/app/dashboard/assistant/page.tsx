@@ -1,5 +1,8 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
+
 import { useState, useRef, useEffect } from 'react';
 import api from '@/lib/api';
 import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
@@ -73,7 +76,8 @@ export default function AssistantPage() {
           className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth"
         >
           {messages.map((m, idx) => (
-            <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={`${m.role}-${idx}-${m.timestamp.getTime()}`} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+
               <div className={`flex items-end space-x-2 max-w-[80%] ${m.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mb-1 ${
                   m.role === 'user' ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600'
