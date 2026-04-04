@@ -13,6 +13,9 @@ router.use(authenticate, requireAdmin);
 // GET  /api/users
 router.get('/', UserController.getAllUsers);
 
+// POST /api/users
+router.post('/', validate(updateUserSchema), UserController.createUser);
+
 // GET  /api/users/:id
 router.get('/:id', UserController.getUserById);
 

@@ -14,19 +14,22 @@ const router = Router();
 // All record routes require authentication
 router.use(authenticate);
 
-// GET  /api/records  — viewer, analyst, admin (any authenticated user)
-router.get('/', validate(recordFilterSchema, 'query'), RecordController.getRecords);
+// GET  /api/records  — Analyst
+router.get('/', requireAnalyst, validate(recordFilterSchema, 'query'), RecordController.getRecords);
 
-// GET  /api/records/:id — viewer, analyst, admin
-router.get('/:id', RecordController.getRecordById);
+// GET  /api/records/:id — Analyst
+router.get('/:id', requireAnalyst, RecordController.getRecordById);
 
-// POST /api/records   — admin only
+// POST /api/records   — Admin
 router.post('/', requireAdmin, validate(createRecordSchema), RecordController.createRecord);
 
-// PATCH /api/records/:id — admin only
+// PATCH /api/records/:id — Admin
 router.patch('/:id', requireAdmin, validate(updateRecordSchema), RecordController.updateRecord);
 
-// DELETE /api/records/:id — admin only
+// PUT /api/records/:id — Admin (added to map directly to assignment requirement)
+router.put('/:id', requireAdmin, validate(updateRecordSchema), RecordController.updateRecord);
+
+// DELETE /api/records/:id — Admin
 router.delete('/:id', requireAdmin, RecordController.deleteRecord);
 
 export default router;

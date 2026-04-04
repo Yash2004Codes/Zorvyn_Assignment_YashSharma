@@ -10,13 +10,14 @@ export function validate(schema: ZodSchema, source: Source = 'body') {
       const parsed = schema.parse(req[source]);
       req[source] = parsed;
       next();
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof ZodError) {
-        const errors = err.errors.map((e) => ({
+        const errors = err.issues.map((e: any) => ({
           field: e.path.join('.'),
           message: e.message,
         }));
         sendError(res, 'Validation failed', 422, errors);
+
       } else {
         sendError(res, 'Invalid request data', 422);
       }

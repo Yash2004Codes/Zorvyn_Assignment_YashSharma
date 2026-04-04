@@ -12,27 +12,82 @@ import authRoutes      from './routes/auth.routes';
 import userRoutes      from './routes/user.routes';
 import recordRoutes    from './routes/record.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import chatRoutes      from './routes/chat.routes';
 
 const app  = express();
 const PORT = process.env.PORT || 4000;
 
 // ── Run DB migrations on startup ─────────────────────────────
-runMigrations();
+// (Migrated to bottom for cleaner startup sequence)
 
-// ── Global Middleware ─────────────────────────────────────────
-app.use(cors({ origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], credentials: true }));
+
+// Build allowed origins list — supports comma-separated FRONTEND_URL values
+const frontendUrls = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(u => u.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  ...frontendUrls,
+].filter(Boolean) as string[];
+
+console.log('✅ CORS allowed origins:', allowedOrigins);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow no-origin requests (curl, mobile, Render health checks)
+    if (!origin) return callback(null, true);
+
+    const isAllowed =
+      allowedOrigins.includes(origin) ||
+      /\.netlify\.app$/.test(origin) ||
+      /\.onrender\.com$/.test(origin) ||
+      process.env.CORS_ALLOW_ALL === 'true';   // emergency escape hatch
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`🚫 CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Health check for cloud platform status monitoring
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
+});
+
+// ── Trust Proxy (Required for Render / any reverse proxy) ────
+app.set('trust proxy', 1);
+
 // ── Rate Limiting ─────────────────────────────────────────────
+// General API limiter — generous for normal dashboard usage
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: process.env.NODE_ENV === 'production' ? 500 : 2000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests, please try again later.' },
 });
 app.use('/api', limiter);
+
+// Stricter limiter on auth endpoints only (prevent brute-force)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 30 : 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many login attempts, please try again later.' },
+});
+app.use('/api/auth', authLimiter);
 
 // ── Health Check ──────────────────────────────────────────────
 app.get('/api/health', (_req: Request, res: Response) => {
@@ -44,6 +99,7 @@ app.use('/api/auth',      authRoutes);
 app.use('/api/users',     userRoutes);
 app.use('/api/records',   recordRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/chat',      chatRoutes);
 
 // ── 404 Handler ───────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
@@ -57,9 +113,19 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 // ── Start Server ──────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`🚀 Finance API server running at http://localhost:${PORT}`);
-  console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
-});
+(async () => {
+  try {
+    console.log('⏳ Running database migrations...');
+    await runMigrations();
+    app.listen(PORT, () => {
+      console.log(`🚀 Finance API server running at http://localhost:${PORT}`);
+      console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
+    });
+  } catch (err) {
+    console.error('❌ Failed to start server due to migration error:', err);
+    process.exit(1);
+  }
+})();
 
 export default app;
+

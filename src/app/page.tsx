@@ -1,58 +1,48 @@
+// Root entry page — immediately redirects visitors to /login.
+// This page never renders visually for more than a brief flash; it's purely a navigation guard.
 'use client';
 
-import { useState, useEffect } from 'react';
+// Force dynamic rendering so the redirect works correctly in server environments.
+export const dynamic = 'force-dynamic';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const [healthStatus, setHealthStatus] = useState<string>('Checking backend...');
+  const router = useRouter();
 
+  // On mount, redirect the user to the login page.
+  // router.replace (not push) so the "/" entry is NOT kept in browser history —
+  // pressing "Back" from login won't bounce the user back here.
   useEffect(() => {
-    fetch('http://localhost:4000/api/health')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setHealthStatus('✅ Backend is connected and running!');
-        } else {
-          setHealthStatus('❌ Backend failed to respond properly.');
-        }
-      })
-      .catch((err) => {
-        setHealthStatus('❌ Could not connect to backend. Is it running?');
-        console.error(err);
-      });
-  }, []);
+    router.replace('/login');
+  }, [router]);
 
+  // Renders a full-screen spinner while the redirect is in-flight.
+  // Inline styles are used here intentionally — this component loads before
+  // Tailwind fully hydrates, ensuring a flicker-free loading state.
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="max-w-2xl w-full bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-          Finance Dashboard Setup Complete
-        </h1>
-        
-        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8">
-          <p className="text-blue-700 font-medium">{healthStatus}</p>
-        </div>
-
-        <div className="space-y-6">
-          <section>
-            <h2 className="text-xl font-semibold mb-3">Backend Details</h2>
-            <ul className="list-disc pl-5 space-y-2 text-gray-600">
-              <li>API running on <code>http://localhost:4000/api</code></li>
-              <li>SQLite database stored in <code>data/finance.db</code></li>
-              <li>Default Admin Account: <strong>admin@finance.com</strong> (Pass: <strong>Admin@1234</strong>)</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold mb-3">Next Steps</h2>
-            <div className="bg-gray-100 p-4 rounded-md text-sm text-gray-800">
-              <p>You can run both the frontend and backend using:</p>
-              <pre className="bg-gray-800 text-green-400 p-2 rounded mt-2">
-                npm run dev
-              </pre>
-            </div>
-          </section>
-        </div>
-      </div>
-    </main>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '100vh',
+      background: '#f8fafc',
+      fontFamily: 'sans-serif',
+      flexDirection: 'column',
+      gap: '16px'
+    }}>
+      {/* Spinning ring animation — CSS keyframes are scoped inline to avoid global pollution */}
+      <div style={{
+        width: '40px',
+        height: '40px',
+        border: '4px solid #e0e7ff',
+        borderTop: '4px solid #4f46e5',
+        borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite'
+      }} />
+      <p style={{ color: '#6b7280', fontWeight: 500 }}>Redirecting to login...</p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
   );
 }

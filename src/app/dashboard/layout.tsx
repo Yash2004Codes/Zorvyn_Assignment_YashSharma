@@ -1,22 +1,32 @@
+// Dashboard Layout — the persistent shell wrapping every /dashboard/* page.
+// Responsibilities:
+//   1. Guards routes: redirects unauthenticated users to /login.
+//   2. Builds a role-aware sidebar navigation (different links for admin/analyst/viewer).
+//   3. Renders the floating AI ChatAssistant for admin and analyst roles only.
 'use client';
 
 import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Receipt, Users, LogOut, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Receipt, Users, LogOut, Loader2, Sparkles } from 'lucide-react';
+import ChatAssistant from '@/components/ChatAssistant';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname(); // Used to highlight the currently active nav link.
 
+  // If auth state is resolved and there is no user, force a redirect to login.
+  // This runs on every render so navigating directly to a protected URL is blocked.
   useEffect(() => {
     if (!isLoading && !user) {
       router.push('/login');
     }
   }, [user, isLoading, router]);
 
+  // Show a loading spinner while AuthContext is verifying the JWT cookie.
+  // This prevents a flash of unauthenticated content before the check completes.
   if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
@@ -26,18 +36,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  // Build the nav links array dynamically based on the current user's role.
+  // All roles see "Overview" and "Profile". Higher roles see additional links.
   const navLinks = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Transactions', href: '/dashboard/records', icon: Receipt },
   ];
 
+  // Analysts and Admins can access aggregated insights charts.
+  if (user.role === 'analyst' || user.role === 'admin') {
+    navLinks.push({ name: 'Insights', href: '/dashboard/insights', icon: LayoutDashboard });
+  }
+
+  // Only Admins can manage transactions and other users.
   if (user.role === 'admin') {
+    navLinks.push({ name: 'Transactions', href: '/dashboard/records', icon: Receipt });
     navLinks.push({ name: 'Users', href: '/dashboard/users', icon: Users });
   }
 
+  // Profile is available to everyone.
+  navLinks.push({ name: 'Profile', href: '/dashboard/profile', icon: Users });
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col lg:flex-row">
+      {/* ── Sidebar ───────────────────────────────────────────── */}
       <aside className="w-full lg:w-64 bg-indigo-900 text-white flex flex-col shadow-xl">
+        {/* App branding + logged-in user card */}
         <div className="p-6">
           <h2 className="text-2xl font-bold tracking-tight">Finance App</h2>
           <div className="mt-4 px-3 py-2 bg-indigo-800/50 rounded-lg backdrop-blur-sm border border-indigo-700">
@@ -46,9 +69,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
+        {/* Role-filtered navigation links */}
         <nav className="flex-1 px-4 space-y-2 mt-4">
           {navLinks.map((link) => {
             const Icon = link.icon;
+            // Apply an active highlight style when pathname exactly matches the link.
             const isActive = pathname === link.href;
             return (
               <Link
@@ -67,6 +92,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
+        {/* Sign out button — pinned to the bottom of the sidebar */}
         <div className="p-4 border-t border-indigo-800 mt-auto">
           <button
             onClick={logout}
@@ -78,11 +104,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
+      {/* ── Main Content Area ─────────────────────────────────── */}
+      {/* children renders the current /dashboard/* page here */}
       <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           {children}
         </div>
       </main>
+
+      {/* Floating AI Chat Assistant — visible only to admin and analyst roles */}
+      {(user.role === 'admin' || user.role === 'analyst') && <ChatAssistant />}
     </div>
   );
 }
