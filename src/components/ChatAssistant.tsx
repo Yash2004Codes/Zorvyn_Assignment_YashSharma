@@ -24,6 +24,10 @@ export default function ChatAssistant() {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Skip rendering during SSR/Build to prevent hydration and prerender errors
+  if (typeof window === 'undefined') return null;
+
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -97,7 +101,8 @@ export default function ChatAssistant() {
             className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/30"
           >
             {messages.map((m, idx) => (
-              <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={`${m.role}-${idx}-${m.timestamp?.getTime() || idx}`} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+
                 <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm font-medium shadow-sm leading-relaxed ${
                   m.role === 'user' 
                     ? 'bg-indigo-600 text-white rounded-br-none' 
