@@ -32,11 +32,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Skip auth check during build/SSR
+      if (typeof window === 'undefined') return;
+
       const token = Cookies.get('token');
       if (!token) {
         setIsLoading(false);
         return;
       }
+
 
       try {
         const responseData = await api.get('/auth/me');

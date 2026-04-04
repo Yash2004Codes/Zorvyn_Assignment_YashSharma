@@ -33,7 +33,7 @@ export default function Home() {
         <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
           Finance Dashboard Setup Complete
         </h1>
-        
+
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8">
           <p className="text-blue-700 font-medium">{healthStatus}</p>
         </div>
@@ -51,7 +51,7 @@ export default function Home() {
           <section>
             <h2 className="text-xl font-semibold mb-3">Quick Navigation</h2>
             <div className="flex space-x-4">
-              <button 
+              <button
                 onClick={() => router.push('/login')}
                 className="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-lg active:scale-95"
               >
