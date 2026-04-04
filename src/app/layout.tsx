@@ -1,8 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-
-import { AuthProvider } from '@/contexts/AuthContext'
-import { Toaster } from 'react-hot-toast'
+import { Providers } from '@/components/Providers'
 
 export const metadata: Metadata = {
   title: 'Finance Dashboard',
@@ -15,13 +13,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning={true}>
       <body suppressHydrationWarning={true}>
-
-        <AuthProvider>
+        <Providers key="site-providers">
           {children}
-          <Toaster position="top-right" />
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   )
