@@ -1,25 +1,31 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const [healthStatus, setHealthStatus] = useState<string>('Checking backend...');
+  const [healthStatus, setHealthStatus] = useState<string>('Checking backend connectivity...');
+  const router = useRouter();
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/health')
+    fetch(`${apiBase}/health`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) {
-          setHealthStatus('✅ Backend is connected and running!');
+        if (data.status === 'ok') {
+          setHealthStatus('✅ Backend is live and connected!');
         } else {
-          setHealthStatus('❌ Backend failed to respond properly.');
+          setHealthStatus('⚠️ Backend returned non-OK status.');
         }
       })
       .catch((err) => {
-        setHealthStatus('❌ Could not connect to backend. Is it running?');
+        setHealthStatus('❌ Cannot reach backend yet.');
         console.error(err);
       });
-  }, []);
+  }, [apiBase]);
+
 
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -36,22 +42,25 @@ export default function Home() {
           <section>
             <h2 className="text-xl font-semibold mb-3">Backend Details</h2>
             <ul className="list-disc pl-5 space-y-2 text-gray-600">
-              <li>API running on <code>http://localhost:4000/api</code></li>
-              <li>SQLite database stored in <code>data/finance.db</code></li>
+              <li>API running on <strong>Render.com</strong> (PostgreSQL)</li>
+              <li>Database managed via <strong>Supabase</strong></li>
               <li>Default Admin Account: <strong>admin@finance.com</strong> (Pass: <strong>Admin@1234</strong>)</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold mb-3">Next Steps</h2>
-            <div className="bg-gray-100 p-4 rounded-md text-sm text-gray-800">
-              <p>You can run both the frontend and backend using:</p>
-              <pre className="bg-gray-800 text-green-400 p-2 rounded mt-2">
-                npm run dev
-              </pre>
+            <h2 className="text-xl font-semibold mb-3">Quick Navigation</h2>
+            <div className="flex space-x-4">
+              <button 
+                onClick={() => router.push('/login')}
+                className="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-lg active:scale-95"
+              >
+                Go to Login
+              </button>
             </div>
           </section>
         </div>
+
       </div>
     </main>
   );
