@@ -138,6 +138,35 @@ graph TD
 ```
 
 
+## 📁 Project Structure
+
+This project follows a clear separation between the **Frontend (Next.js)** and the **Backend (Express)** for better maintainability.
+
+```text
+Zorvyn/
+├── server/                 # Express Backend (Node.js/TS)
+│   ├── src/
+│   │   ├── controllers/    # Route handlers & request logic
+│   │   ├── services/       # Core business & DB logic
+│   │   ├── middleware/     # Auth (JWT) & Role checking
+│   │   ├── models/         # TypeScript types & interfaces
+│   │   ├── routes/         # API endpoint definitions
+│   │   ├── validators/     # Zod schema validation layers
+│   │   ├── db/             # SQLite migrations & seeding
+│   │   └── utils/          # Helpers (JWT, Swagger specs)
+│   └── index.ts            # Server entry point
+├── src/                    # Next.js Frontend (React/TS)
+│   ├── app/                # App Router (Pages, Layouts)
+│   │   ├── dashboard/      # Protected dashboard modules
+│   │   └── login/          # Authentication pages
+│   ├── components/         # Reusable UI & AI Chat widgets
+│   ├── contexts/           # Global State (AuthContext)
+│   ├── lib/                # API client (Axios config)
+│   └── styles/             # Global CSS & Tailwind config
+├── public/                 # Static assets (images, fonts)
+└── README.md               # Documentation
+```
+
 ## 🚀 Getting Started
 
 ### 1. Prerequisites

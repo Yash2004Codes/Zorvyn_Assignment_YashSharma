@@ -14,22 +14,107 @@ const router = Router();
 // All record routes require authentication
 router.use(authenticate);
 
-// GET  /api/records  — Analyst
+/**
+ * @swagger
+ * /records:
+ *   get:
+ *     summary: Get all records (Analyst/Admin)
+ *     tags: [Records]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema: { type: string, enum: [income, expense] }
+ *     responses:
+ *       200:
+ *         description: List of records
+ */
 router.get('/', requireAnalyst, validate(recordFilterSchema, 'query'), RecordController.getRecords);
 
-// GET  /api/records/:id — Analyst
+/**
+ * @swagger
+ * /records/{id}:
+ *   get:
+ *     summary: Get record by ID
+ *     tags: [Records]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Record details
+ */
 router.get('/:id', requireAnalyst, RecordController.getRecordById);
 
-// POST /api/records   — Admin
+/**
+ * @swagger
+ * /records:
+ *   post:
+ *     summary: Create new record (Admin)
+ *     tags: [Records]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Transaction'
+ *     responses:
+ *       201:
+ *         description: Created
+ */
 router.post('/', requireAdmin, validate(createRecordSchema), RecordController.createRecord);
 
-// PATCH /api/records/:id — Admin
+/**
+ * @swagger
+ * /records/{id}:
+ *   patch:
+ *     summary: Update record (Admin)
+ *     tags: [Records]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Transaction'
+ *     responses:
+ *       200:
+ *         description: Updated
+ */
 router.patch('/:id', requireAdmin, validate(updateRecordSchema), RecordController.updateRecord);
 
-// PUT /api/records/:id — Admin (added to map directly to assignment requirement)
+// PUT mapping for standard compatibility
 router.put('/:id', requireAdmin, validate(updateRecordSchema), RecordController.updateRecord);
 
-// DELETE /api/records/:id — Admin
+/**
+ * @swagger
+ * /records/{id}:
+ *   delete:
+ *     summary: Soft delete record (Admin)
+ *     tags: [Records]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Deleted
+ */
 router.delete('/:id', requireAdmin, RecordController.deleteRecord);
 
 export default router;

@@ -25,6 +25,9 @@ import recordRoutes    from './routes/record.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import chatRoutes      from './routes/chat.routes';
 
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './utils/swagger';
+
 const app  = express();
 // Default port 4000 can be overridden by environment variable
 const PORT = process.env.PORT || 4000;
@@ -118,6 +121,10 @@ app.use('/api/users',     userRoutes);      // Admin-level user management
 app.use('/api/records',   recordRoutes);    // Financial record CRUD operations
 app.use('/api/dashboard', dashboardRoutes); // High-level aggregations & summaries
 app.use('/api/chat',      chatRoutes);      // AI Assistant requests
+
+// ── Swagger UI ────────────────────────────────────────────────
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+console.log(`📖 Swagger documentation available at: http://localhost:${PORT}/api-docs`);
 
 
 // Catch-all 404 Route: Returns status 404 for any undefined resource paths.
