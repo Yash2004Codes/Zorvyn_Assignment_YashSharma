@@ -3,8 +3,6 @@
 A premium, full-stack Role-Based Access Control (RBAC) finance dashboard built for professional assignment presentation. This application demonstrates secure user authentication, complex data visualization, real-time API integrations, and an AI-driven financial assistant.
 
 YouTube Live Demo : https://youtu.be/VxeCti0ILeU 
-
-
 Netlifyy Deployed Link : https://zorvynfinanci.netlify.app/login 
 ---
 
@@ -139,6 +137,35 @@ graph TD
     ViewerDash --> FeaturesV[Personal Records Only]
 ```
 
+
+## 📁 Project Structure
+
+This project follows a clear separation between the **Frontend (Next.js)** and the **Backend (Express)** for better maintainability.
+
+```text
+Zorvyn/
+├── server/                 # Express Backend (Node.js/TS)
+│   ├── src/
+│   │   ├── controllers/    # Route handlers & request logic
+│   │   ├── services/       # Core business & DB logic
+│   │   ├── middleware/     # Auth (JWT) & Role checking
+│   │   ├── models/         # TypeScript types & interfaces
+│   │   ├── routes/         # API endpoint definitions
+│   │   ├── validators/     # Zod schema validation layers
+│   │   ├── db/             # SQLite migrations & seeding
+│   │   └── utils/          # Helpers (JWT, Swagger specs)
+│   └── index.ts            # Server entry point
+├── src/                    # Next.js Frontend (React/TS)
+│   ├── app/                # App Router (Pages, Layouts)
+│   │   ├── dashboard/      # Protected dashboard modules
+│   │   └── login/          # Authentication pages
+│   ├── components/         # Reusable UI & AI Chat widgets
+│   ├── contexts/           # Global State (AuthContext)
+│   ├── lib/                # API client (Axios config)
+│   └── styles/             # Global CSS & Tailwind config
+├── public/                 # Static assets (images, fonts)
+└── README.md               # Documentation
+```
 
 ## 🚀 Getting Started
 

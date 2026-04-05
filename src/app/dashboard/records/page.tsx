@@ -1,3 +1,12 @@
+/**
+ * Transactions Page component for managing financial records.
+ * 
+ * Features:
+ * - Role-Based Access Control: Admins can full CRUD, Viewers can only view their own.
+ * - Dynamic Filtering: Filter records by type, category, and date via API queries.
+ * - Real-time CRUD: Create, Edit, and Delete (Soft delete) records with toast feedback.
+ * - Responsive Table: Clean layout with status indicators for income vs. expense.
+ */
 'use client';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +28,7 @@ interface Record {
 }
 
 export default function RecordsPage() {
+  // State for data management and UI visibility
   const [records, setRecords] = useState<Record[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,14 +38,14 @@ export default function RecordsPage() {
   const [activeRecordId, setActiveRecordId] = useState<number | null>(null);
   const { user } = useAuth();
 
-  // Filter State
+  // Filter state for searching transactions
   const [filters, setFilters] = useState({
     type: '',
     category: '',
     date: '',
   });
   
-  // Form State
+  // Form state for creating/updating records
   const [formData, setFormData] = useState({
     amount: '',
     type: 'expense',
@@ -44,6 +54,9 @@ export default function RecordsPage() {
     notes: '',
   });
 
+  /**
+   * Fetches records from the backend based on current filter state.
+   */
   const fetchRecords = async () => {
     try {
       setLoading(true);
@@ -55,16 +68,20 @@ export default function RecordsPage() {
       const res = await api.get(`/records?${params.toString()}`);
       setRecords(res.data.records || []);
     } catch (err: any) {
-      toast.error('Failed to parse financial records');
+      toast.error('Failed to load financial records');
     } finally {
       setLoading(false);
     }
   };
 
+  // Trigger fetch when filters change
   useEffect(() => {
     fetchRecords();
   }, [filters]);
 
+  /**
+   * Handles submission for both creating and updating records.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -74,23 +91,29 @@ export default function RecordsPage() {
       };
       
       if (isEditing && activeRecordId) {
+        // PATCH request for existing record
         await api.patch(`/records/${activeRecordId}`, payload);
         toast.success('Record updated successfully');
       } else {
+        // POST request for new record
         await api.post('/records', payload);
         toast.success('Record added successfully');
       }
       
+      // Reset Modal and Form state
       setIsModalOpen(false);
       setIsEditing(false);
       setActiveRecordId(null);
-      setFormData({ ...formData, amount: '', category: '', notes: '' }); // reset
-      fetchRecords();
+      setFormData({ ...formData, amount: '', category: '', notes: '' });
+      fetchRecords(); // Refresh table
     } catch (err: any) {
       toast.error(err.message || 'Failed to complete transaction.');
     }
   };
 
+  /**
+   * Populates form and opens modal in "Edit Mode".
+   */
   const handleEdit = (record: Record) => {
     setIsEditing(true);
     setActiveRecordId(record.id);
@@ -104,11 +127,17 @@ export default function RecordsPage() {
     setIsModalOpen(true);
   };
 
+  /**
+   * Triggers the delete confirmation modal.
+   */
   const confirmDelete = (id: number) => {
     setRecordToDelete(id);
     setIsDeleteModalOpen(true);
   };
 
+  /**
+   * Executes soft-delete on the server.
+   */
   const handleDelete = async () => {
     if (!recordToDelete) return;
     try {
@@ -122,10 +151,12 @@ export default function RecordsPage() {
     }
   };
 
+  // Helper boolean for role-specific UI elements
   const isAdmin = user?.role === 'admin';
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header section with page title and primary action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Transactions</h1>
@@ -143,7 +174,7 @@ export default function RecordsPage() {
         )}
       </div>
 
-      {/* Filter Bar */}
+      {/* Persistence Bar: Multi-input filter system */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Type</label>
@@ -178,6 +209,7 @@ export default function RecordsPage() {
         </div>
       </div>
 
+      {/* Main Data Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-indigo-500 w-8 h-8" /></div>
@@ -242,14 +274,16 @@ export default function RecordsPage() {
         )}
       </div>
 
+      {/* CRUD Modal for Add/Edit */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden scale-in-center">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h2 className="text-xl font-bold text-gray-900">{isEditing ? 'Edit Transaction' : 'Add Transaction'}</h2>
-              <button onClick={() => { setIsModalOpen(false); setIsEditing(false); }} className="text-gray-400 hover:text-gray-600">×</button>
+              <button onClick={() => { setIsModalOpen(false); setIsEditing(false); }} className="text-gray-400 hover:text-gray-600 text-2xl font-light">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* Common field set for both modes */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                 <select
@@ -332,7 +366,7 @@ export default function RecordsPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Modal: Safety check for destructive deletions */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl overflow-hidden p-8 text-center scale-in-center">
